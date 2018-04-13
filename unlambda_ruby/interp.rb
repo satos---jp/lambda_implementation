@@ -1,42 +1,45 @@
 class ContErr < StandardError;
+	attr_reader :v , :tag
 	def initialize(tag,v)
-		@t = tag
+		@tag = tag
 		@v = v
 	end
-	def v; @v end
-	def tag; @t end
 end
 
-
-class Cont
-	def initialize(c)
-		@c = c
-	end
-	def show(_=false)
-		'<cont %d>' % @c
-	end
-	def c
-		@c
-	end
-	def subst(v,t)
+class Lam
+	def reduce
 		self
 	end
-	def reduce
+	def subst(v,t)
 		self
 	end
 	def isfree(v)
 		false
 	end
-end 
+	def size
+		1
+	end
+	def simplify
+		self
+	end
+end
 
-class Com
+class Cont < Lam
+	attr_reader :c
+	def initialize(c)
+		@c = c
+	end
+	def show(_=false)
+		'<cont %d>' % @c 
+	end
+end
+
+class Com < Lam
+	attr_reader :v
 	def initialize(v)
 		@v = v
 	end
 	def show(_=false)
-		@v
-	end
-	def v 
 		@v
 	end
 	def ski
@@ -50,36 +53,25 @@ class Com
 	def ski_show
 		@v.downcase
 	end
-	def subst(v,t)
-		self
-	end
-	def reduce
-		self
-	end
-	def isfree(v)
-		false
-	end
 end
 
 class Var
+	attr_reader :v
 	def initialize(v)
 		@v = v
 	end
 	def show(_=false)
 		@v
 	end
-	def v
-		@v
-	end
 	def ski
-		self
+		if @v[0] == "$" then
+			eval(@v).ski
+		else
+			self
+		end
 	end
 	def ski_show
-		if @v[0] == "$" then
-			eval(@v).ski.ski_show
-		else
-			@v
-		end
+		@v
 	end
 	def subst(v,t)
 		if v == @v then t else self end
@@ -94,19 +86,20 @@ class Var
 	def isfree(v)
 		v == @v
 	end
+	def size
+		1
+	end
+	def simplify
+		self
+	end
 end
 
 class Abs
+	attr_reader :v , :b
 	def initialize(v,b)
 		@v = v
 		@b = b
 	end	
-	def v
-		@v
-	end	
-	def b
-		@b
-	end
 	def show(parent=true)
 		res = 'λ' + @v + '.' + @b.show(false)
 		if !parent then
@@ -140,7 +133,6 @@ class Abs
 		end
 	end
 	def reduce
-		#Abs.new(@v,@b.reduce)
 		self
 	end
 	def isfree(v)
@@ -149,43 +141,38 @@ class Abs
 end
 
 class App
+	attr_reader :fst , :snd
 	def initialize(a,b)
-		@a = a
-		@b = b
+		@fst = a
+		@snd = b
 	end
 	def show(parent = false)
-		res = @a.show(false) + ' ' + @b.show(true)
+		res = @fst.show(false) + ' ' + @snd.show(true)
 		if parent then
 			res = '(' + res + ')'
 		end
 		res
 	end
-	def fst
-		@a
-	end
-	def snd
-		@b
-	end
 	def ski
-		App.new(@a.ski,@b.ski)
+		App.new(@fst.ski,@snd.ski)
 	end
 	def ski_show
-		'`' + @a.ski_show + @b.ski_show
+		'`' + @fst.ski_show + @snd.ski_show
 	end
 	
 	def subst(v,t)
-		App.new(@a.subst(v,t),@b.subst(v,t))
+		App.new(@fst.subst(v,t),@snd.subst(v,t))
 	end
 	def reduce
 		#p self.show
-		a = @a.reduce
+		a = @fst.reduce
 		if a.is_a? Abs then
 			#p self.show
-			#p "%s [ %s := %s ] reduce to %s" % [ a.b.show ,a.v ,@b.show ,a.b.subst(a.v,@b).show]
-			return a.b.subst(a.v,@b).reduce
+			#p "%s [ %s := %s ] reduce to %s" % [ a.b.show ,a.v ,@snd.show ,a.b.subst(a.v,@snd).show]
+			return a.b.subst(a.v,@snd).reduce
 		end
-		b = @b.reduce
-		#b = @b
+		b = @snd.reduce
+		#b = @snd
 		
 		def iscom(a,v)
 			a.is_a?(Com) && a.v == v 
@@ -226,7 +213,26 @@ class App
 		return App.new(a,b)
 	end
 	def isfree(v)
-		@a.isfree(v) || @b.isfree(v)
+		@fst.isfree(v) || @snd.isfree(v)
+	end
+	
+	def size
+		@fst.size + @snd.size
+	end
+	def simplify
+		ts = nil
+		if self.size < 10
+			if iscom(App.new(App.new(self,Com.new('X')),Com.new('Y')).reduce,'X') then
+				ts = Com.new('K')
+			elsif iscom(App.new(self,Com.new('X')).reduce,'X') then
+				ts = Com.new('I')
+			end
+		end
+		if ts then
+			ts
+		else
+			App.new(@fst.simplify,@snd.simplify)
+		end
 	end
 end
 
@@ -285,107 +291,6 @@ end
 
 require './library.rb'
 
-
-
-#p s2lam('a. b. a').ski.ski_show
-#p s2lam('a. b. b').ski.ski_show
-#p s2lam('a. b. b').ski.reduce.ski_show
-
-#p $zcon.show
-
-la = s2lam('@ C c.(K .a (?1 c .b))')
-la = s2lam('@ ?1')
-la = s2lam('$to_c *6')
-#p la.show
-#la = s2lam('$to_c *1')
-#p la.ski.ski_show
-
-
-"""
-for i in 0..5 do
-	for j in 1..5 do
-		#s = '$isge *%d *%d .t .f' % [i,j]
-		s = '$divmod *%d *%d (a. b. S ($to_c a) ($to_c b))' % [i,j]
-		p s
-		p s2lam(s).reduce.show
-	end
-	p ''
-end
-"""
-
-
-la = s2lam('$to_c ($add *3 *2)')
-
-#la = s2lam('$iszero *32')
-
-
-la = s2lam('$divmod *5 *2 (a. b. S ($to_c a) ($to_c b))')
-
-#la = s2lam('$isge V *0 .t .f')
-
-#la = s2lam('K I (C (c. c)) (C (c. c))')
-
-la = s2lam('$print_int ($read_int I)')
-
-la = s2lam('$print_int *30')
-
-la = s2lam('$print_int ($read_int *0)')
-
-la = s2lam('(ri. $print_int ($add (ri *0) (ri *0))) $read_int')
-
-la = s2lam('K ((ri. $print_int ($add (ri *0) ($add (ri *0) (ri *0)))) $read_int) ')
-
-
-la = s2lam('Z (f. i. @ (x. | x f i)) I')
-
-
-#はじめてのatcoder A 
-la = s2lam('''
-	K ((ri. $print_int ($add (ri *0) ($add (ri *0) (ri *0)))) $read_int) 
-		(.g I) (Z (f. i. @ (x. | x f i)) I)
-''')
-
-#Placing Marbles
-la = s2lam('''
-	(a. b. c. a
-		(b 
-			(c .3 .2)
-			(c .2 .1)
-		)
-		(b 
-			(c .2 .1)
-			(c .1 .0)
-		)) ($iv2tf (@ ?1)) ($iv2tf (@ ?1)) ($iv2tf (@ ?1)) I
-''')
-
-
-
-
-#la = s2lam('(ri. $print_int ($add (ri *0) (ri *0))) $read_int')
-
-
-#la = s2lam('($iv2tf (@ ?1))')
-
-
-#la = s2lam('$to_c (@ $isdigit)')
-
-#la = s2lam('@ (i.(x. ($iv2tf x) .t .f)) (?0 i))')
-
-"""
-p la.show
-p la.reduce.show
-p la.ski.ski_show.length
-p la.ski.ski_show
-"""
-
-#p s2lam('$print_int').ski.ski_show.length
-#p s2lam('$read_int').ski.ski_show.length
-
-
-#p la.ski.ski_show
-#.ski.ski_show
-
-#print s2lam('$to_c').ski.ski_show
 
 
 

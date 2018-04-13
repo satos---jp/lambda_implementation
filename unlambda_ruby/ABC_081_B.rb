@@ -217,9 +217,14 @@ la = s2lam('''
 	)) $read_int 
 ''')
 
+la = s2lam('''
+	$getketa *0
+''')
+
 #p la.show
 #p la.reduce.show
 #p la.reduce.reduce.show
 #p la.ski.ski_show.length
-print la.ski.ski_show
+#print la.ski.ski_show
+print la.ski.simplify.ski_show
 
