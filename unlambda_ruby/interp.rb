@@ -221,11 +221,14 @@ class App
 	end
 	def simplify
 		ts = nil
-		if self.size < 10
+		if self.size < 5
 			if iscom(App.new(App.new(self,Com.new('X')),Com.new('Y')).reduce,'X') then
+				#p self.show
 				ts = Com.new('K')
 			elsif iscom(App.new(self,Com.new('X')).reduce,'X') then
 				ts = Com.new('I')
+			#elsif self.reduce.size < self.size then
+			#	ts = self.reduce
 			end
 		end
 		if ts then

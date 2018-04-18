@@ -217,10 +217,6 @@ la = s2lam('''
 	)) $read_int 
 ''')
 
-la = s2lam('''
-	$getketa *0
-''')
-
 #p la.show
 #p la.reduce.show
 #p la.reduce.reduce.show

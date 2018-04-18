@@ -60,19 +60,6 @@ $to_c = s2lam('''
 ''')
 
 
-"""
-$zcon = s2lam('''
-	f.(x. f (y. (x x) y)) (x. f (y. (x x) y))
-''')
-$ycon = s2lam('''
-	f.(x. f (x x)) (x. f (x x))
-''')
-"""
-
-$zcon = s2lam('''
-	f.(x. f (D (x x))) (x. f (D (x x)))
-''')
-
 $zcon = s2lam('''
 	f.(x. f (D (x x))) (x. f (D (x x)))
 ''')
@@ -145,6 +132,8 @@ $add = s2lam('''
 
 $not = s2lam('f. f $f $t')
 
+$or = s2lam('a. b. a $t b')
+
 
 $sub = s2lam('''
 	Z (f. r. n. m. 
@@ -173,7 +162,7 @@ $iszero = s2lam('''
 ''')
 
 # n>m か n=>m かの組をかえす
-$isge_eq = s2lam('''
+$isg_eq = s2lam('''
 	Z (f. n. m.
 		$checons n 
 			(na. nb. 
@@ -199,7 +188,10 @@ $isge_eq = s2lam('''
 	)
 ''')
 
-$isge = s2lam('n. m. ($isge_eq n m) (a. b. a $t b)') 
+$isge = s2lam('n. m. ($isg_eq n m) (a. b. a $t b)') 
+
+$isg = s2lam('n. m. ($isg_eq n m) (a. b. a)') 
+
 
 # n/m と n % m をまとめてかえす
 $divmod = s2lam('''
@@ -332,6 +324,43 @@ $isdigit = s2lam('''
 	)
 ''')
 
+$isdigit = s2lam('''
+	(i. C (c.
+		(?0 i c *0,28)
+		(?1 i c *1,27)
+		(?2 i c *2,30)
+		(?3 i c *3,27)
+		(?4 i c *4,28)
+		(?5 i c *5,27)
+		(?6 i c *6,29)
+		(?7 i c *7,27)
+		(?8 i c *8,29)
+		(?9 i c *9,27)
+			V
+		))))))))))
+	))
+''')
+
+$isdigit = s2lam('''
+	(i. C (c.
+		(?0 i c *0)
+		(?1 i c *1)
+		(?2 i c *2)
+		(?3 i c *3)
+		(?4 i c *4)
+		(?5 i c *5)
+		(?6 i c *6)
+		(?7 i c *7)
+		(?8 i c *8)
+		(?9 i c *9)
+			V
+		))))))))))
+	))
+''')
+
+
+
+
 """
 $inc_kuri = s2lam('''
 	Z (f. n. 
@@ -393,5 +422,6 @@ $read_int = s2lam('''
 		)
 	)
 ''') #print "200 " + "123456789 " * 200 で 2051ms 。なぜかこっちの方が早い。
+
 
 
