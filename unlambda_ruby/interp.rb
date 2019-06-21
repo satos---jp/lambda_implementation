@@ -286,7 +286,9 @@ def s2lam(s)
 		end
 	end
 	#p s
-	res,_ = parse(s)
+	res,rem = parse(s)
+	#p rem
+	raise "assert" unless rem.length == 0
 	res
 end
 

@@ -3,6 +3,9 @@
 #true,false の組でやって、末尾をvにする
 
 def n2lam(n,bl=$binlength)
+	if $ischurchnum then
+		return s2lam('s. z.' + '(s' * n + ' z' + ')' * n)
+	end
 	#s = 's. z.' + '(s' * n + ' z' + ')' * n
 	def rec(n,d,bl)
 		if d == bl then 'V' 
@@ -14,6 +17,8 @@ def n2lam(n,bl=$binlength)
 	end
 	s2lam(rec(n,0,bl)) 
 end
+
+$ischurchnum = false
 
 $binlength = 32
 
@@ -337,7 +342,6 @@ $isdigit = s2lam('''
 		(?8 i c *8,29)
 		(?9 i c *9,27)
 			V
-		))))))))))
 	))
 ''')
 
@@ -354,7 +358,6 @@ $isdigit = s2lam('''
 		(?8 i c *8)
 		(?9 i c *9)
 			V
-		))))))))))
 	))
 ''')
 
